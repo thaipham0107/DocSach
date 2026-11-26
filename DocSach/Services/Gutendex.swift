@@ -100,19 +100,11 @@ enum Gutendex {
 
 
 /// Sách tiếng Việt đã hết bản quyền trên Wikisource tiếng Việt (vi.wikisource.org),
-/// xuất ra EPUB bằng công cụ WS Export của Wikimedia.
+/// app tự dựng EPUB từ nội dung trang (xem WikisourceBook).
 struct WikisourceResult: Identifiable, Hashable {
     let title: String
     let snippet: String
     var id: String { title }
-
-    var epubURL: URL? {
-        var comps = URLComponents(string: "https://ws-export.wmcloud.org/")!
-        comps.queryItems = [URLQueryItem(name: "format", value: "epub-3"),
-                            URLQueryItem(name: "lang", value: "vi"),
-                            URLQueryItem(name: "page", value: title)]
-        return comps.url
-    }
 }
 
 enum WikisourceVN {

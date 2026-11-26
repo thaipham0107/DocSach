@@ -194,7 +194,7 @@ struct DiscoverView: View {
     }
 
     private func wikisourceRow(_ item: WikisourceResult) -> some View {
-        let owned = item.epubURL.map { ownedSources.contains($0.absoluteString) } ?? false
+        let owned = ownedSources.contains(WikisourceBook.sourceKey(for: item.title))
         return HStack(alignment: .top, spacing: 12) {
             PlaceholderCover(title: item.title, author: "", category: .vietnamese)
                 .frame(width: 56, height: 84)
@@ -204,9 +204,9 @@ struct DiscoverView: View {
                 if !item.snippet.isEmpty {
                     Text(item.snippet).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 }
-                if let url = item.epubURL {
+                Group {
                     Button {
-                        Task { await importer.importLink(url.absoluteString, category: .vietnamese, context: context) }
+                        Task { await importer.importWikisource(title: item.title, category: .vietnamese, context: context) }
                     } label: {
                         Label(owned ? "Đã có trong thư viện" : "Tải về thư viện",
                               systemImage: owned ? "checkmark.circle.fill" : "arrow.down.to.line")

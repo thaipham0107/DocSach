@@ -2,23 +2,29 @@
 """Tạo EPUB từ một tác phẩm trên Wikisource tiếng Việt (văn bản đã hết bản quyền).
 Cách dùng: python3 wikisource_epub.py "<tên trang>" <tệp ra.epub> [chu_de]
 In ra tên trang thực tế và số chương. Thoát mã 1 nếu không có trang."""
-import json, re, sys, time, uuid, zipfile, urllib.parse, urllib.request, html
+import json, re, sys, time, uuid, zipfile, urllib.error, urllib.parse, urllib.request, html
 from bs4 import BeautifulSoup
 
 API = "https://vi.wikisource.org/w/api.php"
 UA = "DocSach-build/1.0 (personal e-reader; github.com/thaipham0107/DocSach)"
 
 def api(**params):
-    params.update(format="json", formatversion="2")
+    params.update(format="json", formatversion="2", maxlag="5")
     url = API + "?" + urllib.parse.urlencode(params)
-    for attempt in range(4):
+    err = None
+    for attempt in range(6):
+        time.sleep(1.2)  # lịch sự với máy chủ Wikimedia
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Encoding": "identity"})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return json.load(r)
-        except Exception as e:
-            time.sleep(2 + attempt * 3)
+        except urllib.error.HTTPError as e:
             err = e
+            wait = int(e.headers.get("Retry-After", "0") or 0) or (10 * (attempt + 1))
+            time.sleep(min(wait, 60))
+        except Exception as e:
+            err = e
+            time.sleep(5)
     raise err
 
 def resolve_title(q):
@@ -65,14 +71,15 @@ def main():
     main_title, main_html = parse(title)
     soup = BeautifulSoup(main_html, "html.parser")
     # Các chương: liên kết tới trang con "Tên/…" theo thứ tự xuất hiện
-    prefix = "/wiki/" + urllib.parse.quote(title.replace(" ", "_")) + "/"
+    want = title.replace("_", " ") + "/"
     subs = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
-        if href.startswith(prefix):
-            t = urllib.parse.unquote(href[len("/wiki/"):]).split("#")[0].replace("_", " ")
-            if t not in subs:
-                subs.append(t)
+        if not href.startswith("/wiki/"):
+            continue
+        t = urllib.parse.unquote(href[len("/wiki/"):]).split("#")[0].replace("_", " ")
+        if t.startswith(want) and t not in subs:
+            subs.append(t)
     if not subs:
         d = api(action="query", list="allpages", apprefix=title + "/", apnamespace=0, aplimit="max")
         subs = [p["title"] for p in d.get("query", {}).get("allpages", [])]
@@ -89,7 +96,7 @@ def main():
             body = clean(chtml)
             if len(body.get_text(strip=True)) < 20: continue
             chapters.append((ct.split("/", 1)[-1], to_xhtml_fragment(body)))
-            time.sleep(0.3)
+            
     if not chapters:
         chapters = [(main_title, to_xhtml_fragment(clean(main_html)))]
 

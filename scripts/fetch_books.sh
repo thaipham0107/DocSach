@@ -45,9 +45,4 @@ while IFS=$'\t' read -r cat q; do
   fi
 done < scripts/seed_books_vi.tsv
 
-# Kiểm tra WS Export (dùng cho nút tải sách tiếng Việt trong app)
-code=$(curl -s -o /tmp/ws.epub -w '%{http_code}' -G --max-time 120 -A "$UA" "https://ws-export.wmcloud.org/" \
-  --data-urlencode "format=epub-3" --data-urlencode "lang=vi" --data-urlencode "page=Chí Phèo")
-echo "WSEXPORT http=${code} head=$(head -c 120 /tmp/ws.epub | tr -d '\n' | cut -c1-120)"
-
 echo "Tong: ${ok} cuon OK, ${fail} loi"
