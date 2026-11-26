@@ -15,6 +15,9 @@ struct LibraryView: View {
     @State private var showLinkSheet = false
     @State private var openBook: Book?
     @State private var bookToDelete: Book?
+    @State private var isSelecting = false
+    @State private var selected: Set<UUID> = []
+    @State private var confirmBulkDelete = false
 
     static let importTypes: [UTType] = {
         var types: [UTType] = [.epub, .pdf, .zip]
@@ -57,7 +60,17 @@ struct LibraryView: View {
             .navigationTitle("Thư viện")
             .searchable(text: $search, prompt: "Tìm theo tên sách, tác giả")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { addMenu }
+                ToolbarItem(placement: .topBarLeading) {
+                    if !books.isEmpty {
+                        Button(isSelecting ? "Xong" : "Chọn") {
+                            withAnimation {
+                                isSelecting.toggle()
+                                selected = []
+                            }
+                        }
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) { if !isSelecting { addMenu } }
             }
             .fileImporter(isPresented: $showFilePicker, allowedContentTypes: Self.importTypes,
                           allowsMultipleSelection: true) { result in
@@ -67,6 +80,36 @@ struct LibraryView: View {
             }
             .sheet(isPresented: $showLinkSheet) { LinkImportSheet(initialCategory: filter) }
             .fullScreenCover(item: $openBook) { book in ReaderContainer(book: book) }
+            .safeAreaInset(edge: .bottom) {
+                if isSelecting {
+                    HStack {
+                        Button(selected.count == filtered.count ? "Bỏ chọn" : "Chọn tất cả") {
+                            selected = selected.count == filtered.count ? [] : Set(filtered.map(\.id))
+                        }
+                        Spacer()
+                        Button(role: .destructive) { confirmBulkDelete = true } label: {
+                            Label("Xoá (\(selected.count))", systemImage: "trash")
+                                .font(.headline)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .disabled(selected.isEmpty)
+                    }
+                    .padding()
+                    .background(.regularMaterial)
+                }
+            }
+            .confirmationDialog("Xoá \(selected.count) cuốn sách khỏi máy?", isPresented: $confirmBulkDelete,
+                                titleVisibility: .visible) {
+                Button("Xoá \(selected.count) cuốn", role: .destructive) {
+                    let toDelete = books.filter { selected.contains($0.id) }
+                    for book in toDelete { ImportCenter.delete(book, context: context) }
+                    selected = []
+                    isSelecting = false
+                }
+            } message: {
+                Text("Sách và dấu trang sẽ bị xoá. Lịch sử thời gian đọc vẫn được giữ.")
+            }
             .confirmationDialog("Xoá sách khỏi máy?", isPresented: Binding(
                 get: { bookToDelete != nil }, set: { if !$0 { bookToDelete = nil } }),
                                 titleVisibility: .visible) {
@@ -150,11 +193,27 @@ struct LibraryView: View {
     private var grid: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 16)], spacing: 22) {
             ForEach(filtered) { book in
-                Button { openBook = book } label: {
+                Button {
+                    if isSelecting {
+                        if selected.contains(book.id) { selected.remove(book.id) } else { selected.insert(book.id) }
+                    } else {
+                        openBook = book
+                    }
+                } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         BookCoverView(book: book)
+                            .overlay(alignment: .topLeading) {
+                                if isSelecting {
+                                    Image(systemName: selected.contains(book.id) ? "checkmark.circle.fill" : "circle")
+                                        .font(.title2)
+                                        .foregroundStyle(selected.contains(book.id) ? AppTheme.accent : .white)
+                                        .background(Circle().fill(Color.black.opacity(0.25)))
+                                        .padding(6)
+                                }
+                            }
+                            .opacity(isSelecting && !selected.contains(book.id) ? 0.75 : 1)
                             .overlay(alignment: .topTrailing) {
-                                if book.isFinished {
+                                if book.isFinished && !isSelecting {
                                     Image(systemName: "checkmark.seal.fill")
                                         .foregroundStyle(.white, .green)
                                         .font(.title3)
