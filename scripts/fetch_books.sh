@@ -30,4 +30,26 @@ while IFS=$'\t' read -r cat id note; do
   fi
   sleep 1
 done < scripts/seed_books.tsv
+
+# --- Sách tiếng Việt đã hết bản quyền: Wikisource tiếng Việt, xuất EPUB bằng WS Export ---
+i=0
+while IFS=$'\t' read -r cat q; do
+  [[ -z "${cat}" || "${cat}" == \#* ]] && continue
+  i=$((i+1))
+  title=$(curl -fsSL -G -A "$UA" "https://vi.wikisource.org/w/api.php" \
+      --data-urlencode "action=query" --data-urlencode "list=search" --data-urlencode "srsearch=${q}" \
+      --data-urlencode "srnamespace=0" --data-urlencode "srlimit=5" --data-urlencode "format=json" 2>/dev/null \
+    | python3 -c 'import json,sys; r=json.load(sys.stdin)["query"]["search"]; print(r[0]["title"].split("/")[0] if r else "")' 2>/dev/null)
+  if [ -z "$title" ]; then echo "FAIL vi ${cat} '${q}': khong tim thay"; fail=$((fail+1)); continue; fi
+  dest="$OUT/${cat}__vi$(printf '%02d' $i).epub"
+  if curl -fsSL -G --max-time 300 -A "$UA" "https://ws-export.wmcloud.org/" \
+       --data-urlencode "format=epub-3" --data-urlencode "lang=vi" --data-urlencode "page=${title}" -o "$dest" \
+     && [ "$(head -c 2 "$dest")" = "PK" ]; then
+    echo "OK   vi ${cat} '${q}' -> trang '${title}' $(du -h "$dest" | cut -f1)"; ok=$((ok+1))
+  else
+    rm -f "$dest"; echo "FAIL vi ${cat} '${q}' -> trang '${title}': WS Export loi"; fail=$((fail+1))
+  fi
+  sleep 2
+done < scripts/seed_books_vi.tsv
+
 echo "Tong: ${ok} cuon OK, ${fail} loi"

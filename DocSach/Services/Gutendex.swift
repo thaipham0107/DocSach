@@ -66,7 +66,7 @@ struct Shelf: Identifiable, Hashable {
                     Shelf(title: "Wilkie Collins", search: "Wilkie Collins"),
                     Shelf(title: "Dracula", search: "Bram Stoker"),
                     Shelf(title: "Kinh dị", topic: "horror")]
-        case .comics, .other:
+        case .comics, .other, .vietnamese:
             return [Shelf(title: "Phổ biến nhất", topic: "fiction"),
                     Shelf(title: "Phiêu lưu", topic: "adventure")]
         }
@@ -95,5 +95,76 @@ enum Gutendex {
             throw ImportError.http(http.statusCode)
         }
         return try JSONDecoder().decode(GutendexPage.self, from: data)
+    }
+}
+
+
+/// Sách tiếng Việt đã hết bản quyền trên Wikisource tiếng Việt (vi.wikisource.org),
+/// xuất ra EPUB bằng công cụ WS Export của Wikimedia.
+struct WikisourceResult: Identifiable, Hashable {
+    let title: String
+    let snippet: String
+    var id: String { title }
+
+    var epubURL: URL? {
+        var comps = URLComponents(string: "https://ws-export.wmcloud.org/")!
+        comps.queryItems = [URLQueryItem(name: "format", value: "epub-3"),
+                            URLQueryItem(name: "lang", value: "vi"),
+                            URLQueryItem(name: "page", value: title)]
+        return comps.url
+    }
+}
+
+enum WikisourceVN {
+    struct Shelf: Identifiable, Hashable {
+        let title: String
+        let query: String
+        var id: String { title }
+    }
+
+    static let shelves: [Shelf] = [
+        Shelf(title: "Vũ Trọng Phụng", query: "Vũ Trọng Phụng tiểu thuyết"),
+        Shelf(title: "Ngô Tất Tố", query: "Ngô Tất Tố"),
+        Shelf(title: "Nam Cao", query: "Nam Cao truyện ngắn"),
+        Shelf(title: "Thạch Lam", query: "Thạch Lam"),
+        Shelf(title: "Khái Hưng", query: "Khái Hưng"),
+        Shelf(title: "Nhất Linh", query: "Nhất Linh"),
+        Shelf(title: "Hồ Biểu Chánh", query: "Hồ Biểu Chánh"),
+        Shelf(title: "Truyện kỳ ảo xưa", query: "Truyền kỳ mạn lục"),
+        Shelf(title: "Truyện cổ", query: "Lĩnh Nam chích quái"),
+        Shelf(title: "Truyện thơ", query: "Truyện Kiều")
+    ]
+
+    struct SearchResponse: Decodable {
+        struct Query: Decodable { let search: [Item] }
+        struct Item: Decodable { let title: String; let snippet: String }
+        let query: Query
+    }
+
+    static func search(_ text: String) async throws -> [WikisourceResult] {
+        var comps = URLComponents(string: "https://vi.wikisource.org/w/api.php")!
+        comps.queryItems = [
+            URLQueryItem(name: "action", value: "query"),
+            URLQueryItem(name: "list", value: "search"),
+            URLQueryItem(name: "srsearch", value: text),
+            URLQueryItem(name: "srnamespace", value: "0"),
+            URLQueryItem(name: "srlimit", value: "50"),
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "origin", value: "*")
+        ]
+        var request = URLRequest(url: comps.url!)
+        request.timeoutInterval = 30
+        request.setValue("DocSach/1.0 (personal reading app)", forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let decoded = try JSONDecoder().decode(SearchResponse.self, from: data)
+        var seen = Set<String>()
+        // Chỉ giữ trang gốc của tác phẩm (bỏ các chương con "Tên/Chương 1")
+        return decoded.query.search.compactMap { item -> WikisourceResult? in
+            let root = item.title.components(separatedBy: "/").first ?? item.title
+            guard !seen.contains(root) else { return nil }
+            seen.insert(root)
+            let plain = item.snippet.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+            return WikisourceResult(title: root, snippet: plain)
+        }
     }
 }

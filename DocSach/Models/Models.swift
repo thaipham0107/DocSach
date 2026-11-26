@@ -5,7 +5,7 @@ import SwiftUI
 // MARK: - Chủ đề sách
 
 enum BookCategory: String, CaseIterable, Codable, Identifiable {
-    case business, detective, mystery, comics, other
+    case business, detective, mystery, vietnamese, comics, other
 
     var id: String { rawValue }
 
@@ -14,6 +14,7 @@ enum BookCategory: String, CaseIterable, Codable, Identifiable {
         case .business: return "Doanh nhân"
         case .detective: return "Trinh thám"
         case .mystery: return "Phá án ma mị"
+        case .vietnamese: return "Truyện Việt"
         case .comics: return "Truyện tranh"
         case .other: return "Khác"
         }
@@ -24,6 +25,7 @@ enum BookCategory: String, CaseIterable, Codable, Identifiable {
         case .business: return "briefcase.fill"
         case .detective: return "magnifyingglass"
         case .mystery: return "moon.stars.fill"
+        case .vietnamese: return "text.book.closed.fill"
         case .comics: return "face.smiling.inverse"
         case .other: return "books.vertical.fill"
         }
@@ -34,6 +36,7 @@ enum BookCategory: String, CaseIterable, Codable, Identifiable {
         case .business: return Color(hex: "2F6FDE")
         case .detective: return Color(hex: "3E7C59")
         case .mystery: return Color(hex: "6B3FA0")
+        case .vietnamese: return Color(hex: "C0392B")
         case .comics: return Color(hex: "E8613C")
         case .other: return Color(hex: "8A6E4B")
         }
@@ -52,6 +55,8 @@ enum BookCategory: String, CaseIterable, Codable, Identifiable {
         for (category, words) in rules where words.contains(where: { t.contains($0) }) {
             return category
         }
+        let vietnameseLetters = "ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ"
+        if t.contains(where: { vietnameseLetters.contains($0) }) { return .vietnamese }
         return .other
     }
 }

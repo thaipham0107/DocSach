@@ -11,7 +11,9 @@ enum StarterPack {
         (.detective, 1661), (.detective, 244), (.detective, 2097), (.detective, 2852),
         (.detective, 863), (.detective, 58866), (.detective, 204), (.detective, 6133), (.detective, 155),
         (.mystery, 2147), (.mystery, 2148), (.mystery, 345), (.mystery, 583), (.mystery, 209),
-        (.mystery, 43), (.mystery, 8486), (.mystery, 175)
+        (.mystery, 43), (.mystery, 8486), (.mystery, 175),
+        (.detective, 834), (.detective, 108), (.detective, 61262), (.detective, 1155),
+        (.mystery, 84), (.mystery, 68283), (.mystery, 70652), (.mystery, 50133)
     ]
 
     static let doneKey = "starterPack.done"

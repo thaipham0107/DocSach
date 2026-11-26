@@ -7,8 +7,10 @@ struct DiscoverView: View {
     @Environment(ImportCenter.self) private var importer
     @Query private var books: [Book]
 
-    @State private var category: BookCategory = .business
-    @State private var shelf: Shelf? = Shelf.shelves(for: .business).first
+    @State private var category: BookCategory = .vietnamese
+    @State private var shelf: Shelf? = nil
+    @State private var wsShelf: WikisourceVN.Shelf? = WikisourceVN.shelves.first
+    @State private var wsResults: [WikisourceResult] = []
     @State private var query = ""
     @State private var results: [GutenBook] = []
     @State private var nextURL: URL?
@@ -17,7 +19,7 @@ struct DiscoverView: View {
     @State private var showLinkSheet = false
     @State private var showFilePicker = false
 
-    private let categories: [BookCategory] = [.business, .detective, .mystery, .comics]
+    private let categories: [BookCategory] = [.vietnamese, .business, .detective, .mystery, .comics]
 
     private var ownedSources: Set<String> { Set(books.compactMap(\.sourceURL)) }
 
@@ -37,6 +39,8 @@ struct DiscoverView: View {
 
                     if category == .comics {
                         comicsInfo
+                    } else if category == .vietnamese {
+                        vietnameseSection
                     } else {
                         shelvesBar
                         resultsList
@@ -48,8 +52,17 @@ struct DiscoverView: View {
             }
             .background(AppTheme.paper.ignoresSafeArea())
             .navigationTitle("Khám phá")
-            .searchable(text: $query, prompt: "Tìm sách miễn phí (tiếng Anh)")
+            .searchable(text: $query, prompt: category == .vietnamese ? "Tìm tác phẩm tiếng Việt" : "Tìm sách miễn phí (tiếng Anh)")
             .onSubmit(of: .search) { Task { await load() } }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SourceSitesView()
+                    } label: {
+                        Label("Trang web nguồn", systemImage: "safari")
+                    }
+                }
+            }
             .sheet(isPresented: $showLinkSheet) { LinkImportSheet(initialCategory: category) }
             .fileImporter(isPresented: $showFilePicker, allowedContentTypes: LibraryView.importTypes,
                           allowsMultipleSelection: true) { result in
@@ -57,7 +70,7 @@ struct DiscoverView: View {
                     Task { await importer.importFiles(urls, category: category, context: context) }
                 }
             }
-            .task { if results.isEmpty { await load() } }
+            .task { if results.isEmpty && wsResults.isEmpty { await load() } }
         }
     }
 
@@ -144,6 +157,72 @@ struct DiscoverView: View {
         .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
     }
 
+    private var vietnameseSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Văn học Việt Nam đã hết bản quyền, lấy từ Wikisource tiếng Việt: Vũ Trọng Phụng, Ngô Tất Tố, Nam Cao, Thạch Lam, Tự Lực văn đoàn, Hồ Biểu Chánh, truyện kỳ ảo xưa…")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(WikisourceVN.shelves) { s in
+                        ChipButton(title: s.title, color: BookCategory.vietnamese.color,
+                                   isSelected: wsShelf == s && query.isEmpty) {
+                            query = ""
+                            wsShelf = s
+                            Task { await load() }
+                        }
+                    }
+                }
+            }
+            if isLoading && wsResults.isEmpty {
+                ProgressView("Đang tìm sách…").frame(maxWidth: .infinity).padding(.vertical, 40)
+            } else if let errorText {
+                VStack(spacing: 10) {
+                    Text(errorText).multilineTextAlignment(.center).foregroundStyle(.secondary)
+                    Button("Thử lại") { Task { await load() } }.buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity)
+            } else if wsResults.isEmpty {
+                Text("Không tìm thấy tác phẩm phù hợp.").foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity).padding(.vertical, 30)
+            } else {
+                LazyVStack(spacing: 10) {
+                    ForEach(wsResults) { item in wikisourceRow(item) }
+                }
+            }
+        }
+    }
+
+    private func wikisourceRow(_ item: WikisourceResult) -> some View {
+        let owned = item.epubURL.map { ownedSources.contains($0.absoluteString) } ?? false
+        return HStack(alignment: .top, spacing: 12) {
+            PlaceholderCover(title: item.title, author: "", category: .vietnamese)
+                .frame(width: 56, height: 84)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.title).font(.subheadline.weight(.semibold)).lineLimit(2)
+                if !item.snippet.isEmpty {
+                    Text(item.snippet).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }
+                if let url = item.epubURL {
+                    Button {
+                        Task { await importer.importLink(url.absoluteString, category: .vietnamese, context: context) }
+                    } label: {
+                        Label(owned ? "Đã có trong thư viện" : "Tải về thư viện",
+                              systemImage: owned ? "checkmark.circle.fill" : "arrow.down.to.line")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(owned ? .green : BookCategory.vietnamese.color)
+                    .disabled(owned)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+    }
+
     private var comicsInfo: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Truyện tranh màu (Conan, Doraemon…)", systemImage: "face.smiling.inverse")
@@ -177,7 +256,7 @@ struct DiscoverView: View {
             Button {
                 Task { await importer.importStarterPack(context: context, force: true) }
             } label: {
-                Label("Tải lại tủ sách miễn phí khởi đầu (23 cuốn)", systemImage: "books.vertical")
+                Label("Tải lại tủ sách miễn phí khởi đầu", systemImage: "books.vertical")
                     .font(.footnote.weight(.semibold))
             }
             .buttonStyle(.bordered)
@@ -197,6 +276,8 @@ struct DiscoverView: View {
         query = ""
         shelf = Shelf.shelves(for: c).first
         results = []
+        wsResults = []
+        wsShelf = WikisourceVN.shelves.first
         nextURL = nil
         errorText = nil
         if c != .comics { Task { await load() } }
@@ -206,6 +287,16 @@ struct DiscoverView: View {
         isLoading = true
         errorText = nil
         defer { isLoading = false }
+        if category == .vietnamese {
+            do {
+                let text = query.isEmpty ? (wsShelf?.query ?? "tiểu thuyết") : query
+                wsResults = try await WikisourceVN.search(text)
+            } catch {
+                wsResults = []
+                errorText = "Chưa kết nối được Wikisource. Kiểm tra mạng rồi thử lại.\n(\(error.localizedDescription))"
+            }
+            return
+        }
         do {
             let page = try await Gutendex.fetch(shelf: shelf, query: query)
             results = page.results.filter { $0.epubURL != nil }
