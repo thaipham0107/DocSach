@@ -77,6 +77,7 @@ struct RootView: View {
         }
         .task {
             await importer.importBundledSeedBooks(context: context)
+            await importer.importStarterPack(context: context)
             await importer.importDocumentsFolder(context: context)
             // Đảm bảo lịch nhắc luôn khớp với khung giờ đã lưu
             let infos = slots.filter(\.isEnabled).map {

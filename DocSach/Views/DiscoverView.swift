@@ -174,6 +174,14 @@ struct DiscoverView: View {
 
     private var sourcesNote: some View {
         VStack(alignment: .leading, spacing: 6) {
+            Button {
+                Task { await importer.importStarterPack(context: context, force: true) }
+            } label: {
+                Label("Tải lại tủ sách miễn phí khởi đầu (23 cuốn)", systemImage: "books.vertical")
+                    .font(.footnote.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .padding(.bottom, 4)
             Text("Về nguồn sách").font(.footnote.bold())
             Text("Sách ở đây lấy từ Project Gutenberg: hơn 70.000 cuốn đã hết bản quyền, miễn phí và hợp pháp, phần lớn bằng tiếng Anh (Henry Ford, Sherlock Holmes, Edgar Allan Poe…). Sách mới như tiểu sử Elon Musk hay Quỷ Cổ Nữ còn bản quyền: bạn mua ebook rồi nạp vào bằng tệp hoặc link.")
                 .font(.footnote)

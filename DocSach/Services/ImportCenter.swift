@@ -115,6 +115,11 @@ final class ImportCenter {
     }
 
     @MainActor
+    func insertBook(_ info: ImportedBookInfo, category: BookCategory?, source: String?, context: ModelContext) {
+        insert(info, category: category, source: source, context: context)
+    }
+
+    @MainActor
     private func insert(_ info: ImportedBookInfo, category: BookCategory?, source: String?, context: ModelContext) {
         let book = Book(id: info.id, title: info.title, author: info.author,
                         category: category ?? info.suggestedCategory, format: info.format,
