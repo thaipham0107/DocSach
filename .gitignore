@@ -1,0 +1,8 @@
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+DocSach/SeedBooks/
+Payload/
+*.ipa
+.DS_Store

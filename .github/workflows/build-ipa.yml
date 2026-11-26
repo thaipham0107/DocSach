@@ -1,0 +1,60 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Tai bo sach mien phi (Project Gutenberg)
+        run: bash scripts/fetch_books.sh
+
+      - name: Build app (khong ky, de Sideloadly/AltStore ky lai)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project DocSach.xcodeproj \
+            -scheme DocSach \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)|\*\* " || true
+          test -d build/Build/Products/Release-iphoneos/DocSach.app || { grep -E "error:" build.log | head -50; exit 1; }
+
+      - name: Dong goi IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/DocSach.app Payload/
+          zip -qry DocSach.ipa Payload
+          ls -lh DocSach.ipa
+
+      - name: Luu build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Tao ban phat hanh (Release) de tai IPA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v1.0-build${{ github.run_number }}"
+          gh release create "$TAG" DocSach.ipa \
+            --title "Đọc Sách - bản build ${{ github.run_number }}" \
+            --notes "Tải DocSach.ipa rồi cài lên iPhone bằng Sideloadly hoặc AltStore (xem HUONG-DAN.md)."
