@@ -41,11 +41,17 @@
 - Có nút “Gửi thử 1 thông báo” để kiểm tra.
 - **Lịch sử đọc theo lịch:** mỗi ngày trong tháng được tô màu (xanh: đạt mục tiêu, cam: có đọc). Chạm vào một ngày để xem số phút đã đọc so với mục tiêu của ngày đó, và đã đọc những cuốn nào, lúc mấy giờ. Có tổng thời gian đọc từ trước đến nay, tổng của tháng, số ngày đạt mục tiêu.
 
-**Tủ sách miễn phí có sẵn trong app** (khoảng 20 cuốn, tiếng Anh, từ Project Gutenberg)
+**Tủ sách tiếng Việt có sẵn** (văn học đã hết bản quyền, lấy từ Wikisource tiếng Việt)
+- *Tắt đèn*, *Lều chõng* (Ngô Tất Tố), *Chí Phèo*, *Lão Hạc*, *Đời thừa* (Nam Cao), *Nửa chừng xuân* (Khái Hưng), *Cha con nghĩa nặng* (Hồ Biểu Chánh), *Truyện Kiều*, và *Truyền kỳ mạn lục* (truyện kỳ ảo, ma quái xưa, xếp vào mục Phá án ma mị).
+- Tab Khám phá → **Truyện Việt**: tìm và tải thêm tác phẩm khác trên Wikisource.
+
+**Trang web nguồn** (Khám phá → biểu tượng la bàn): mở các trang sách bạn hay dùng ngay trong app. Bấm nút tải EPUB/PDF/CBZ trên trang là sách tự vào thư viện. Bạn thêm hoặc xoá trang tuỳ ý.
+
+**Tủ sách tiếng Anh có sẵn** (31 cuốn từ Project Gutenberg)
 - Doanh nhân: Henry Ford (*My Life and Work*), Andrew Carnegie, Benjamin Franklin, P. T. Barnum, Edison, Booker T. Washington.
-- Trinh thám: Sherlock Holmes (4 cuốn), Agatha Christie (2 cuốn), Father Brown, Arsène Lupin, *The Moonstone*.
-- Ma mị: Edgar Allan Poe (2 tập), *Dracula*, *The Woman in White*, *The Turn of the Screw*, *Dr Jekyll & Mr Hyde*, truyện ma của M. R. James, *The Phantom of the Opera*.
-- Muốn thêm hoặc bớt sách trong tủ: sửa tệp `scripts/seed_books.tsv` rồi build lại.
+- Trinh thám: Sherlock Holmes (6 cuốn), Agatha Christie (4 cuốn, có *Poirot Investigates*), Father Brown, Arsène Lupin, *The Moonstone*.
+- Ma mị: Edgar Allan Poe (2 tập), *Dracula*, *The Woman in White*, *The Turn of the Screw*, *Dr Jekyll & Mr Hyde*, truyện ma của M. R. James, *The Phantom of the Opera*, *Frankenstein*, H. P. Lovecraft (3 cuốn).
+- Muốn thêm hoặc bớt sách trong tủ: sửa tệp `scripts/seed_books.tsv` (tiếng Anh) hoặc `scripts/seed_books_vi.tsv` (tiếng Việt), GitHub sẽ tự build lại.
 
 ---
 
@@ -63,7 +69,7 @@
 5. Trên iPhone:
    - Vào **Cài đặt → Quyền riêng tư & Bảo mật → Chế độ nhà phát triển**, bật lên. Máy sẽ khởi động lại.
    - Vào **Cài đặt → Cài đặt chung → Quản lý VPN & thiết bị**, chọn Apple ID của bạn rồi bấm **Tin cậy**.
-6. Mở app **Đọc Sách**. Lần đầu mở, app tự nạp sẵn khoảng 20 cuốn sách miễn phí, mất chừng nửa phút. Khi app hỏi quyền gửi thông báo, chọn **Cho phép** để nhận nhắc giờ đọc.
+6. Mở app **Đọc Sách**. Lần đầu mở, app tự nạp sẵn 40 cuốn sách miễn phí, mất khoảng một phút. Khi app hỏi quyền gửi thông báo, chọn **Cho phép** để nhận nhắc giờ đọc.
 
 **Gia hạn sau 7 ngày:** với Apple ID miễn phí, app chạy được 7 ngày. Để gia hạn, cắm máy và bấm Start lại trong Sideloadly. Hoặc bật “Auto-refresh” trong Sideloadly: máy tính đang mở và chung Wi-Fi với iPhone thì app tự được gia hạn. **Sách, tiến độ đọc và lịch sử của bạn vẫn giữ nguyên.**
 
