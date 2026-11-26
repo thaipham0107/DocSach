@@ -57,13 +57,30 @@ struct EPUBReaderView: View {
             theme.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text(package.chapterTitle(for: chapter) ?? book.title)
-                    .font(.caption)
-                    .foregroundStyle(theme.secondaryText)
-                    .lineLimit(1)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 6)
-                    .frame(height: 22)
+                HStack(spacing: 8) {
+                    // Nút thoát luôn hiện: quay về Thư viện
+                    Button(action: onClose) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "chevron.left")
+                            Text("Thư viện")
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(theme.text.opacity(0.08), in: Capsule())
+                    }
+                    .foregroundStyle(theme.text.opacity(0.75))
+                    .accessibilityLabel("Thoát về thư viện")
+
+                    Text(package.chapterTitle(for: chapter) ?? book.title)
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryText)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .frame(height: 40)
 
                 EPUBWebView(package: package, target: target, style: style,
                             onLocation: handleLocation,

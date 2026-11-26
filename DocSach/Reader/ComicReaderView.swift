@@ -30,6 +30,24 @@ struct ComicReaderView: View {
             }
             .ignoresSafeArea()
 
+            if !showControls {
+                VStack {
+                    HStack {
+                        Button(action: onClose) {
+                            Image(systemName: "xmark")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(width: 38, height: 38)
+                                .background(Color.black.opacity(0.45), in: Circle())
+                        }
+                        .accessibilityLabel("Thoát về thư viện")
+                        .padding(.leading, 14)
+                        .padding(.top, 8)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+            }
             if showControls { controls.transition(.opacity) }
         }
         .statusBarHidden(!showControls)
