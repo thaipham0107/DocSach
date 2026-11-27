@@ -100,7 +100,19 @@ struct SourceBrowserView: View {
                 Button { model.webView?.goForward() } label: { Image(systemName: "chevron.forward") }
                     .disabled(!model.canGoForward)
                 Spacer()
-                if model.isLoading { ProgressView() }
+                if model.isLoading {
+                    ProgressView()
+                } else if let pdf = model.pdfURL {
+                    Button {
+                        Task { await importer.importLink(pdf.absoluteString, category: nil, context: context) }
+                    } label: {
+                        Label("Lưu PDF vào thư viện", systemImage: "square.and.arrow.down")
+                            .labelStyle(.titleAndIcon)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.accent)
+                }
                 Spacer()
                 Button { model.webView?.reload() } label: { Image(systemName: "arrow.clockwise") }
             }
@@ -114,6 +126,7 @@ final class BrowserModel {
     var canGoBack = false
     var canGoForward = false
     var isLoading = false
+    var pdfURL: URL?          // trang đang mở là một tệp PDF
     weak var webView: WKWebView?
 }
 
@@ -174,6 +187,9 @@ struct BrowserWebView: UIViewRepresentable {
             let isBook = Self.bookExtensions.contains(ext) && mime != "application/pdf"
                 || mime == "application/epub+zip" || mime == "application/vnd.comicbook+zip"
                 || (isAttachment && (Self.bookMimes.contains(mime) || Self.bookExtensions.contains(ext)))
+            if navigationResponse.isForMainFrame {
+                model.pdfURL = (mime == "application/pdf" && !isAttachment) ? response.url : nil
+            }
             if isBook || !navigationResponse.canShowMIMEType {
                 decisionHandler(.download)
             } else {

@@ -46,6 +46,7 @@ struct DiscoverView: View {
                         resultsList
                     }
 
+                    pdfCard
                     sourcesNote
                 }
                 .padding()
@@ -249,6 +250,30 @@ struct DiscoverView: View {
         }
         .padding()
         .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var pdfCard: some View {
+        NavigationLink {
+            ArchivePDFView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.richtext.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 46, height: 46)
+                    .background(Color(hex: "B03A2E"), in: RoundedRectangle(cornerRadius: 10))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sách PDF miễn phí").font(.headline).foregroundStyle(AppTheme.ink)
+                    Text("Sách quét từ Internet Archive: tiếng Việt xưa, trinh thám, truyện ma, tiểu sử…")
+                        .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
     }
 
     private var sourcesNote: some View {

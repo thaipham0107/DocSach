@@ -83,12 +83,12 @@ final class ImportCenter {
     }
 
     @MainActor @discardableResult
-    func importLink(_ text: String, category: BookCategory?, context: ModelContext) async -> Bool {
+    func importLink(_ text: String, category: BookCategory?, context: ModelContext, sourceKey: String? = nil) async -> Bool {
         guard let url = BookImporter.directURL(from: text) else {
             errorMessage = ImportError.badLink.localizedDescription
             return false
         }
-        let source = url.absoluteString
+        let source = sourceKey ?? url.absoluteString
         let existing = (try? context.fetch(FetchDescriptor<Book>(predicate: #Predicate<Book> { $0.sourceURL == source }))) ?? []
         if let book = existing.first {
             successMessage = "“\(book.title)” đã có trong thư viện"
